@@ -52,78 +52,97 @@ export function Projects() {
           ))}
         </div>
 
-        <motion.div
-          layout
-          className="mt-10 grid gap-6 md:grid-cols-2 lg:grid-cols-3"
-        >
+        <motion.div layout className="mt-14 flex flex-col gap-8 md:gap-12">
           <AnimatePresence mode="popLayout">
-            {filtered.map((project) => (
-              <motion.article
-                key={project.title}
-                layout
-                variants={fadeUp}
-                initial="hidden"
-                whileInView="visible"
-                exit={{ opacity: 0, scale: 0.9 }}
-                viewport={viewportOnce}
-                whileHover={{ y: -8 }}
-                className="glass group flex flex-col overflow-hidden rounded-2xl transition-colors hover:border-primary/40"
-              >
-                <div className="relative aspect-[16/10] overflow-hidden">
-                  <Image
-                    src={project.image}
-                    alt={`${project.title} preview`}
-                    fill
-                    loading="lazy"
-                    sizes="(max-width: 768px) 100vw, 33vw"
-                    className="object-cover transition-transform duration-500 group-hover:scale-105"
-                  />
-                  <div className="absolute inset-0 bg-gradient-to-t from-background via-background/20 to-transparent" />
-                  <span className="absolute left-3 top-3 rounded-full border border-border bg-background/70 px-3 py-1 font-mono text-xs text-foreground backdrop-blur">
-                    {project.category}
-                  </span>
-                </div>
+            {filtered.map((project, i) => {
+              const reversed = i % 2 === 1
+              return (
+                <motion.article
+                  key={project.title}
+                  layout
+                  variants={fadeUp}
+                  initial="hidden"
+                  whileInView="visible"
+                  exit={{ opacity: 0, y: 24 }}
+                  viewport={viewportOnce}
+                  className="glass group grid gap-0 overflow-hidden rounded-3xl transition-colors hover:border-primary/40 md:grid-cols-2"
+                >
+                  {/* Media */}
+                  <div
+                    className={cn(
+                      'relative aspect-[16/10] overflow-hidden md:aspect-auto md:min-h-[22rem]',
+                      reversed && 'md:order-2',
+                    )}
+                  >
+                    <Image
+                      src={project.image}
+                      alt={`${project.title} preview`}
+                      fill
+                      loading="lazy"
+                      sizes="(max-width: 768px) 100vw, 50vw"
+                      className="object-cover transition-transform duration-700 group-hover:scale-105"
+                    />
+                    <div
+                      className={cn(
+                        'absolute inset-0 bg-gradient-to-t from-background via-background/30 to-transparent md:bg-gradient-to-r',
+                        reversed ? 'md:from-transparent md:to-background/60' : 'md:from-background/60 md:to-transparent',
+                      )}
+                    />
+                    <span className="absolute left-4 top-4 rounded-full border border-border bg-background/70 px-3 py-1 font-mono text-xs text-foreground backdrop-blur">
+                      {project.category}
+                    </span>
+                    <span className="absolute right-4 top-4 font-mono text-xs text-primary/80">
+                      {String(i + 1).padStart(2, '0')}
+                    </span>
+                  </div>
 
-                <div className="flex flex-1 flex-col p-6">
-                  <h3 className="text-lg font-semibold">{project.title}</h3>
-                  <p className="mt-2 flex-1 text-sm leading-relaxed text-muted-foreground">
-                    {project.description}
-                  </p>
+                  {/* Content */}
+                  <div
+                    className={cn(
+                      'flex flex-col justify-center p-6 sm:p-8 lg:p-10',
+                      reversed && 'md:order-1',
+                    )}
+                  >
+                    <h3 className="text-xl font-semibold sm:text-2xl">{project.title}</h3>
+                    <p className="mt-3 text-sm leading-relaxed text-muted-foreground sm:text-base">
+                      {project.description}
+                    </p>
 
-                  <div className="mt-4 flex flex-wrap gap-1.5">
-                    {project.technologies.map((tech) => (
-                      <span
-                        key={tech}
-                        className="rounded-md border border-border bg-secondary/40 px-2 py-0.5 font-mono text-[11px] text-muted-foreground"
+                    <div className="mt-5 flex flex-wrap gap-1.5">
+                      {project.technologies.map((tech) => (
+                        <span
+                          key={tech}
+                          className="rounded-md border border-border bg-secondary/40 px-2 py-0.5 font-mono text-[11px] text-muted-foreground"
+                        >
+                          {tech}
+                        </span>
+                      ))}
+                    </div>
+
+                    <div className="mt-7 flex flex-wrap items-center gap-3">
+                      <a
+                        href={project.github}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="inline-flex items-center justify-center gap-2 rounded-full border border-border bg-card/50 px-5 py-2.5 text-sm text-foreground transition-colors hover:border-primary/60 hover:text-primary"
                       >
-                        {tech}
-                      </span>
-                    ))}
+                        <GithubIcon className="h-4 w-4" />
+                        Code
+                      </a>
+                      <a
+                        href={project.demo}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="inline-flex items-center justify-center gap-2 rounded-full bg-primary px-5 py-2.5 text-sm font-medium text-primary-foreground transition-transform hover:scale-[1.03]"
+                      >
+                        <ExternalLink className="h-4 w-4" />
+                        Live Demo
+                      </a>
+                    </div>
                   </div>
-
-                  <div className="mt-6 flex items-center gap-3">
-                    <a
-                      href={project.github}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="inline-flex flex-1 items-center justify-center gap-2 rounded-full border border-border bg-card/50 px-4 py-2 text-sm text-foreground transition-colors hover:border-primary/60 hover:text-primary"
-                    >
-                      <GithubIcon className="h-4 w-4" />
-                      Code
-                    </a>
-                    <a
-                      href={project.demo}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="inline-flex flex-1 items-center justify-center gap-2 rounded-full bg-primary px-4 py-2 text-sm font-medium text-primary-foreground transition-transform hover:scale-[1.03]"
-                    >
-                      <ExternalLink className="h-4 w-4" />
-                      Live Demo
-                    </a>
-                  </div>
-                </div>
-              </motion.article>
-            ))}
+                </motion.article>
+              )
+            })}
           </AnimatePresence>
         </motion.div>
       </div>
