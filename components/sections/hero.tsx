@@ -39,7 +39,7 @@ export function Hero() {
           </span>
 
           <h1 className="mt-6 text-balance text-5xl font-bold leading-[1.05] tracking-tight sm:text-6xl md:text-7xl">
-            <span className="text-black">ASHHA G</span>
+            <span className="text-gradient">ASHHA G</span>
           </h1>
 
           <div className="mt-4 flex h-9 items-center font-mono text-lg text-muted-foreground sm:text-xl">
