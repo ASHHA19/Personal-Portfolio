@@ -128,8 +128,8 @@ export const projects: Project[] = [
       'An AI-powered recruitment platform that analyzes resumes using NLP, compares resumes against job descriptions, generates ATS compatibility scores, and conducts AI-driven mock interviews with intelligent feedback.',
     technologies: ['Python', 'Streamlit', 'NLP', 'Machine Learning', 'Scikit-learn'],
     image: '/project-ai-interview.png',
-    github: 'https://github.com/ashha-g',
-    demo: 'https://github.com/ashha-g',
+    github: 'https://github.com/ASHHA19/AI-Interview-Platform',
+    demo: 'https://github.com/ASHHA19/AI-Interview-Platform',
   },
   {
     title: 'Heart Disease Analyzer',
@@ -138,8 +138,8 @@ export const projects: Project[] = [
       'A medical image processing application that detects heart disease using OpenCV and Machine Learning. The system preprocesses medical images, extracts diagnostic features, and assists in early disease detection.',
     technologies: ['Python', 'OpenCV', 'Machine Learning', 'NumPy', 'Matplotlib'],
     image: '/project-heart-disease.png',
-    github: 'https://github.com/ashha-g',
-    demo: 'https://github.com/ashha-g',
+    github: 'https://github.com/ASHHA19/heart-disease-analyzer',
+    demo: 'https://github.com/ASHHA19/heart-disease-analyzer',
   },
   {
     title: 'Train Track Defect Detection System',
@@ -148,8 +148,8 @@ export const projects: Project[] = [
       'An embedded safety system using an 8051 microcontroller and sensors to detect railway track defects. The project provides automated alerts for improved railway safety using IoT concepts.',
     technologies: ['Embedded C', '8051', 'Sensors', 'IoT', 'Arduino'],
     image: '/project-train-track.png',
-    github: 'https://github.com/ashha-g',
-    demo: 'https://github.com/ashha-g',
+    github: 'https://github.com/ASHHA19/train-track-defect-detection-embedded',
+    demo: 'https://github.com/ASHHA19/train-track-defect-detection-embedded',
   },
 ]
 

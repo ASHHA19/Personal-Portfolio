@@ -12,13 +12,17 @@ export function BackgroundFx() {
   useEffect(() => {
     const canvas = canvasRef.current
     if (!canvas) return
+
     const ctx = canvas.getContext('2d')
     if (!ctx) return
 
+    const canvasElement = canvas
+    const canvasContext = ctx
+
     const prefersReduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches
 
-    let width = (canvas.width = window.innerWidth)
-    let height = (canvas.height = window.innerHeight)
+    let width = (canvasElement.width = window.innerWidth)
+    let height = (canvasElement.height = window.innerHeight)
     let raf = 0
 
     const count = Math.min(70, Math.floor(window.innerWidth / 22))
@@ -33,12 +37,12 @@ export function BackgroundFx() {
     }))
 
     function resize() {
-      width = canvas.width = window.innerWidth
-      height = canvas.height = window.innerHeight
+      width = canvasElement.width = window.innerWidth
+      height = canvasElement.height = window.innerHeight
     }
 
     function draw() {
-      ctx.clearRect(0, 0, width, height)
+      canvasContext.clearRect(0, 0, width, height)
       for (const p of particles) {
         p.x += p.vx
         p.y += p.vy
@@ -46,10 +50,10 @@ export function BackgroundFx() {
         if (p.x > width) p.x = 0
         if (p.y < 0) p.y = height
         if (p.y > height) p.y = 0
-        ctx.beginPath()
-        ctx.arc(p.x, p.y, p.r, 0, Math.PI * 2)
-        ctx.fillStyle = `hsla(${p.hue}, 90%, 70%, ${p.a})`
-        ctx.fill()
+        canvasContext.beginPath()
+        canvasContext.arc(p.x, p.y, p.r, 0, Math.PI * 2)
+        canvasContext.fillStyle = `hsla(${p.hue}, 90%, 70%, ${p.a})`
+        canvasContext.fill()
       }
       raf = requestAnimationFrame(draw)
     }

@@ -8,29 +8,50 @@ import { GithubIcon, LinkedinIcon } from '@/components/brand-icons'
 import { fadeUp, viewportOnce } from '@/lib/animations'
 import { profile } from '@/lib/portfolio-data'
 
-type Status = 'idle' | 'sending' | 'sent'
+type Status = 'idle' | 'sending' | 'sent' | 'error'
 
 export function Contact() {
   const [status, setStatus] = useState<Status>('idle')
-  const [form, setForm] = useState({ name: '', email: '', message: '' })
+  const [error, setError] = useState<string | null>(null)
+  const [form, setForm] = useState({ name: '', email: '', phone: '', message: '' })
 
-  function handleSubmit(e: React.FormEvent) {
+  async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
     if (status !== 'idle') return
+
+    const name = form.name.trim()
+    const email = form.email.trim()
+    const phone = form.phone.trim()
+    const message = form.message.trim()
+
+    if (!name || !email || !message) return
+
     setStatus('sending')
-    // Simulate submission, then open the user's mail client with prefilled content.
-    setTimeout(() => {
+    setError(null)
+
+    try {
+      const response = await fetch('/api/contact', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ name, email, phone, message }),
+      })
+
+      if (!response.ok) {
+        throw new Error('Unable to send your message right now.')
+      }
+
       setStatus('sent')
-      const subject = encodeURIComponent(`Portfolio inquiry from ${form.name || 'a recruiter'}`)
-      const body = encodeURIComponent(
-        `${form.message}\n\n— ${form.name}${form.email ? ` (${form.email})` : ''}`,
-      )
-      window.location.href = `mailto:${profile.email}?subject=${subject}&body=${body}`
-      setTimeout(() => {
+      setForm({ name: '', email: '', phone: '', message: '' })
+      window.setTimeout(() => {
         setStatus('idle')
-        setForm({ name: '', email: '', message: '' })
-      }, 2500)
-    }, 1200)
+        setError(null)
+      }, 3000)
+    } catch (err) {
+      setStatus('error')
+      setError('Unable to send your message right now. Please email me directly at ' + profile.email + '.')
+    }
   }
 
   const contactChannels = [
@@ -105,6 +126,16 @@ export function Contact() {
                 placeholder="jane@company.com"
               />
             </div>
+            <div className="mt-5 grid gap-5 sm:grid-cols-2">
+              <Field
+                id="phone"
+                label="Phone (optional)"
+                type="tel"
+                value={form.phone}
+                onChange={(v) => setForm((f) => ({ ...f, phone: v }))}
+                placeholder="+91 98765 43210"
+              />
+            </div>
             <div className="mt-5">
               <label
                 htmlFor="message"
@@ -144,11 +175,17 @@ export function Contact() {
               )}
               {status === 'sent' && (
                 <>
-                  Opening your mail app
+                  Message sent
                   <Check className="h-4 w-4" />
                 </>
               )}
+              {status === 'error' && 'Try again'}
             </motion.button>
+
+            {error && <p className="mt-3 text-sm text-red-500">{error}</p>}
+            <p className="mt-3 text-xs text-muted-foreground">
+              Messages will be sent to your email, and an SMS alert can be delivered if phone messaging is configured.
+            </p>
           </motion.form>
         </div>
       </div>
