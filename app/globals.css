@@ -88,7 +88,9 @@
     scroll-behavior: smooth;
   }
   body {
-    @apply bg-background text-foreground;
+    /* Transparent so the fixed circuit-board background (-z-10) shows through.
+       The base color is provided by <html> (bg-background). */
+    @apply text-foreground;
   }
 }
 

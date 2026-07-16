@@ -5,30 +5,41 @@ import { useEffect, useRef } from 'react'
 type Trace = {
   points: { x: number; y: number }[]
   length: number
+  hue: number
 }
 
 type Pulse = {
   trace: number
-  pos: number // distance travelled along the trace
+  pos: number
   speed: number
   hue: number
   len: number
 }
 
-type Node = {
+type Pad = {
   x: number
   y: number
   r: number
   hue: number
   phase: number
+  ring: boolean
+}
+
+type Chip = {
+  x: number
+  y: number
+  w: number
+  h: number
+  pins: number
+  hue: number
 }
 
 /**
  * Fixed, full-viewport "running electronics board" background.
- * Renders a PCB-style network of Manhattan-routed copper traces with
- * solder pads/vias and glowing signal pulses that travel along the traces,
- * evoking a live circuit board. Falls back to a static board when the user
- * prefers reduced motion.
+ * Renders a PCB-style network of Manhattan-routed copper traces, IC chip
+ * footprints, ringed vias/solder pads, and bright signal pulses that travel
+ * along the traces — evoking a live, working circuit board. Falls back to a
+ * static board when the user prefers reduced motion.
  */
 export function BackgroundFx() {
   const canvasRef = useRef<HTMLCanvasElement>(null)
@@ -50,7 +61,8 @@ export function BackgroundFx() {
 
     let traces: Trace[] = []
     let pulses: Pulse[] = []
-    let nodes: Node[] = []
+    let pads: Pad[] = []
+    let chips: Chip[] = []
 
     // Blue (258) and violet (292) to match the site palette.
     const hueFor = () => (Math.random() > 0.5 ? 258 : 292)
@@ -80,24 +92,25 @@ export function BackgroundFx() {
     }
 
     function build() {
-      const grid = 46 // spacing of the routing grid
+      const grid = 40 // spacing of the routing grid
       const cols = Math.ceil(width / grid)
       const rows = Math.ceil(height / grid)
       traces = []
-      nodes = []
+      pads = []
+      chips = []
 
-      // Number of traces scales with the viewport but stays performant.
-      const traceCount = Math.min(46, Math.floor((cols * rows) / 26) + 10)
+      // Denser trace network that scales with the viewport.
+      const traceCount = Math.min(90, Math.floor((cols * rows) / 14) + 18)
 
       for (let t = 0; t < traceCount; t++) {
         const points: { x: number; y: number }[] = []
         let cx = Math.floor(Math.random() * cols)
         let cy = Math.floor(Math.random() * rows)
         points.push({ x: cx * grid, y: cy * grid })
-        const segments = 3 + Math.floor(Math.random() * 4)
+        const segments = 3 + Math.floor(Math.random() * 5)
         let horizontal = Math.random() > 0.5
         for (let s = 0; s < segments; s++) {
-          const step = (1 + Math.floor(Math.random() * 4)) * (Math.random() > 0.5 ? 1 : -1)
+          const step = (1 + Math.floor(Math.random() * 5)) * (Math.random() > 0.5 ? 1 : -1)
           if (horizontal) {
             cx = Math.max(0, Math.min(cols, cx + step))
           } else {
@@ -106,27 +119,43 @@ export function BackgroundFx() {
           points.push({ x: cx * grid, y: cy * grid })
           horizontal = !horizontal
         }
-        traces.push({ points, length: traceLength(points) })
-
-        // Place vias/pads at both ends of the trace.
         const hue = hueFor()
+        traces.push({ points, length: traceLength(points), hue })
+
+        // Ringed vias/solder pads at both ends of the trace.
         const start = points[0]
         const end = points[points.length - 1]
-        nodes.push({ x: start.x, y: start.y, r: 2.4, hue, phase: Math.random() * Math.PI * 2 })
-        nodes.push({ x: end.x, y: end.y, r: 2.4, hue, phase: Math.random() * Math.PI * 2 })
+        pads.push({ x: start.x, y: start.y, r: 3, hue, phase: Math.random() * Math.PI * 2, ring: true })
+        pads.push({ x: end.x, y: end.y, r: 3, hue, phase: Math.random() * Math.PI * 2, ring: Math.random() > 0.4 })
+      }
+
+      // Scatter a few IC chip footprints on the board.
+      const chipCount = Math.max(2, Math.floor((cols * rows) / 220))
+      for (let i = 0; i < chipCount; i++) {
+        const pins = 4 + Math.floor(Math.random() * 5)
+        const w = pins * 12
+        const h = 34 + Math.floor(Math.random() * 22)
+        chips.push({
+          x: Math.random() * Math.max(1, width - w),
+          y: Math.random() * Math.max(1, height - h),
+          w,
+          h,
+          pins,
+          hue: hueFor(),
+        })
       }
 
       // Seed pulses travelling along a subset of traces.
       pulses = []
-      const pulseCount = Math.min(traces.length, 26)
+      const pulseCount = Math.min(traces.length, 48)
       for (let i = 0; i < pulseCount; i++) {
         const trace = Math.floor(Math.random() * traces.length)
         pulses.push({
           trace,
           pos: Math.random() * traces[trace].length,
-          speed: 0.6 + Math.random() * 1.4,
-          hue: hueFor(),
-          len: 40 + Math.random() * 60,
+          speed: 0.7 + Math.random() * 1.6,
+          hue: traces[trace].hue,
+          len: 44 + Math.random() * 70,
         })
       }
     }
@@ -143,11 +172,40 @@ export function BackgroundFx() {
       build()
     }
 
+    function drawChip(chip: Chip) {
+      const { x, y, w, h, pins, hue } = chip
+      // Body
+      c.beginPath()
+      c.rect(x, y, w, h)
+      c.fillStyle = `hsla(${hue}, 40%, 30%, 0.16)`
+      c.fill()
+      c.strokeStyle = `hsla(${hue}, 70%, 62%, 0.5)`
+      c.lineWidth = 1.2
+      c.stroke()
+      // Notch dot
+      c.beginPath()
+      c.arc(x + 7, y + 7, 2, 0, Math.PI * 2)
+      c.fillStyle = `hsla(${hue}, 90%, 72%, 0.7)`
+      c.fill()
+      // Pins along top and bottom
+      const gap = w / (pins + 1)
+      c.strokeStyle = `hsla(${hue}, 75%, 64%, 0.55)`
+      c.lineWidth = 2
+      for (let i = 1; i <= pins; i++) {
+        const px = x + gap * i
+        c.beginPath()
+        c.moveTo(px, y)
+        c.lineTo(px, y - 7)
+        c.moveTo(px, y + h)
+        c.lineTo(px, y + h + 7)
+        c.stroke()
+      }
+    }
+
     function drawBoard() {
       c.clearRect(0, 0, width, height)
 
-      // Copper traces (dim base layer).
-      c.lineWidth = 1
+      // Copper traces (base layer, clearly visible).
       c.lineCap = 'round'
       c.lineJoin = 'round'
       for (const trace of traces) {
@@ -156,22 +214,40 @@ export function BackgroundFx() {
         for (let i = 1; i < trace.points.length; i++) {
           c.lineTo(trace.points[i].x, trace.points[i].y)
         }
-        c.strokeStyle = 'oklch(0.62 0.12 258 / 0.14)'
+        c.strokeStyle = `hsla(${trace.hue}, 72%, 60%, 0.32)`
+        c.lineWidth = 1.6
         c.stroke()
       }
 
+      // IC chips.
+      for (const chip of chips) drawChip(chip)
+
       // Solder pads / vias with a soft breathing glow.
       const now = performance.now() / 1000
-      for (const n of nodes) {
-        const glow = 0.35 + 0.35 * Math.sin(now * 1.6 + n.phase)
+      for (const p of pads) {
+        const glow = 0.4 + 0.4 * Math.sin(now * 1.8 + p.phase)
+        // Halo
         c.beginPath()
-        c.arc(n.x, n.y, n.r + 1.5, 0, Math.PI * 2)
-        c.fillStyle = `hsla(${n.hue}, 85%, 68%, ${0.08})`
+        c.arc(p.x, p.y, p.r + 2.5, 0, Math.PI * 2)
+        c.fillStyle = `hsla(${p.hue}, 88%, 66%, 0.12)`
         c.fill()
-        c.beginPath()
-        c.arc(n.x, n.y, n.r, 0, Math.PI * 2)
-        c.fillStyle = `hsla(${n.hue}, 90%, 72%, ${0.2 + glow * 0.4})`
-        c.fill()
+        if (p.ring) {
+          // Donut via
+          c.beginPath()
+          c.arc(p.x, p.y, p.r + 0.5, 0, Math.PI * 2)
+          c.strokeStyle = `hsla(${p.hue}, 90%, 70%, ${0.45 + glow * 0.4})`
+          c.lineWidth = 1.4
+          c.stroke()
+          c.beginPath()
+          c.arc(p.x, p.y, p.r - 1.6, 0, Math.PI * 2)
+          c.fillStyle = `hsla(${p.hue}, 90%, 74%, ${0.35 + glow * 0.4})`
+          c.fill()
+        } else {
+          c.beginPath()
+          c.arc(p.x, p.y, p.r, 0, Math.PI * 2)
+          c.fillStyle = `hsla(${p.hue}, 90%, 72%, ${0.4 + glow * 0.4})`
+          c.fill()
+        }
       }
     }
 
@@ -179,13 +255,13 @@ export function BackgroundFx() {
       for (const p of pulses) {
         const trace = traces[p.trace]
         if (!trace) continue
-        p.pos += p.speed * delta * 0.06
+        p.pos += p.speed * delta * 0.07
         if (p.pos > trace.length + p.len) {
           // Respawn on a (possibly new) trace.
           p.trace = Math.floor(Math.random() * traces.length)
           p.pos = -p.len
-          p.hue = hueFor()
-          p.speed = 0.6 + Math.random() * 1.4
+          p.hue = traces[p.trace]?.hue ?? hueFor()
+          p.speed = 0.7 + Math.random() * 1.6
         }
 
         const head = pointAt(trace, Math.max(0, Math.min(trace.length, p.pos)))
@@ -193,21 +269,21 @@ export function BackgroundFx() {
 
         const grad = c.createLinearGradient(tail.x, tail.y, head.x, head.y)
         grad.addColorStop(0, `hsla(${p.hue}, 95%, 70%, 0)`)
-        grad.addColorStop(1, `hsla(${p.hue}, 95%, 72%, 0.9)`)
+        grad.addColorStop(1, `hsla(${p.hue}, 96%, 74%, 0.95)`)
 
         c.beginPath()
         c.moveTo(tail.x, tail.y)
         c.lineTo(head.x, head.y)
         c.strokeStyle = grad
-        c.lineWidth = 2
+        c.lineWidth = 2.6
         c.stroke()
 
         // Bright signal head.
         c.beginPath()
-        c.arc(head.x, head.y, 2.2, 0, Math.PI * 2)
-        c.fillStyle = `hsla(${p.hue}, 100%, 82%, 0.95)`
-        c.shadowColor = `hsla(${p.hue}, 100%, 70%, 0.9)`
-        c.shadowBlur = 12
+        c.arc(head.x, head.y, 2.6, 0, Math.PI * 2)
+        c.fillStyle = `hsla(${p.hue}, 100%, 84%, 0.98)`
+        c.shadowColor = `hsla(${p.hue}, 100%, 70%, 1)`
+        c.shadowBlur = 16
         c.fill()
         c.shadowBlur = 0
       }
@@ -240,19 +316,19 @@ export function BackgroundFx() {
   return (
     <div aria-hidden="true" className="pointer-events-none fixed inset-0 -z-10 overflow-hidden">
       {/* Base gradient wash */}
-      <div className="aurora absolute inset-0 animate-[aurora-float_16s_ease-in-out_infinite]" />
+      <div className="aurora absolute inset-0 opacity-70 animate-[aurora-float_16s_ease-in-out_infinite]" />
       {/* Running electronics board */}
       <canvas
         ref={canvasRef}
         className="absolute inset-0 h-full w-full"
         style={{
-          maskImage: 'radial-gradient(ellipse 90% 80% at 50% 40%, black, transparent 92%)',
+          maskImage: 'radial-gradient(ellipse 120% 120% at 50% 40%, black 70%, transparent 100%)',
           WebkitMaskImage:
-            'radial-gradient(ellipse 90% 80% at 50% 40%, black, transparent 92%)',
+            'radial-gradient(ellipse 120% 120% at 50% 40%, black 70%, transparent 100%)',
         }}
       />
-      {/* Vignette for depth */}
-      <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_center,transparent_45%,var(--background)_100%)]" />
+      {/* Soft vignette for depth (kept light so the board stays visible) */}
+      <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_center,transparent_60%,color-mix(in_oklch,var(--background)_85%,transparent)_100%)]" />
     </div>
   )
 }
