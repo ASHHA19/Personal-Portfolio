@@ -1,4 +1,5 @@
 import { HeroVideoBackground } from '@/components/hero-video-background'
+import { BackgroundFx } from '@/components/background-fx'
 import { CursorGlow } from '@/components/cursor-glow'
 import { ScrollProgress } from '@/components/scroll-progress'
 import { BackToTop } from '@/components/back-to-top'
@@ -17,6 +18,7 @@ export default function Page() {
   return (
     <>
       <Preloader />
+      <BackgroundFx />
       <HeroVideoBackground />
       <CursorGlow />
       <ScrollProgress />
